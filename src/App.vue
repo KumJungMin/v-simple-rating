@@ -14,6 +14,8 @@ const rating = ref(0);
   <hr />
   <Rating
     :fillIcon="FaceFillIcon"
+    :icon-size="50"
+    :gap="10"
     :emptyIcon="FaceEmptyIcon"
     v-model="rating"
   />

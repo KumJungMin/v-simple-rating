@@ -2,21 +2,26 @@
   <div
     class="rating"
     ref="rating"
-    :class="{ fixed: isSelecting }"
     :style="ratingStyle"
-    :data-value="hoveredRating || currentRating"
     @mousemove="handleMouseMove"
     @mouseleave="resetRating"
     @click="fixRating"
   >
-    <div class="rating-empty" :style="emptyIconStyle"></div>
-    <div class="rating-fill" :style="fillIconStyle"></div>
+    <div
+      v-for="(value, index) in RATING_COUNT"
+      :key="index"
+      class="star"
+      :style="iconContainerStyle"
+      :class="{ filled: isFilled(value) }"
+    >
+      <div class="star-empty" :style="iconStyle(emptyIcon)"></div>
+      <div class="star-fill" :style="iconStyle(fillIcon, value)"></div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-
 import StarIcon from "../assets/icon/star-fill.svg";
 import StarEmptyIcon from "../assets/icon/star.svg";
 
@@ -27,9 +32,13 @@ const props = defineProps({
     type: Number,
     default: 0,
   },
-  width: {
+  gap: {
     type: Number,
-    default: 150,
+    default: 2,
+  },
+  iconSize: {
+    type: Number,
+    default: 30,
   },
   fillIcon: {
     type: String,
@@ -44,8 +53,7 @@ const emit = defineEmits(["update:modelValue"]);
 
 const rating = ref<HTMLElement | null>(null);
 const hoveredRating = ref(0);
-const currentRating = ref(0);
-const isSelecting = ref(false);
+const currentRating = ref(props.modelValue);
 
 watch(
   () => props.modelValue,
@@ -54,36 +62,39 @@ watch(
   }
 );
 
-const ratingStyle = computed(() => {
-  const width = props.width || 150;
-  const height = width / RATING_COUNT;
-  const backgroundSize = `${height}px ${height}px`;
+const ratingValue = computed(() => hoveredRating.value || currentRating.value);
 
-  return {
-    width: `${width}px`,
-    height: `${height}px`,
-    backgroundSize,
-  };
-});
+const ratingStyle = computed(() => ({
+  display: "flex",
+  justifyContent: "center",
+  gap: `${props.gap}px`,
+}));
 
-const emptyIconStyle = computed(() => {
-  return {
-    backgroundImage: `url(${props.emptyIcon})`,
-    ...ratingStyle.value,
-  };
-});
+const iconContainerStyle = computed(() => ({
+  width: `${props.iconSize}px`,
+  height: `${props.iconSize}px`,
+}));
 
-const fillIconStyle = computed(() => {
-  const ratingValue = hoveredRating.value || currentRating.value;
-  const percentage = 100 - (ratingValue / RATING_COUNT) * 100;
+const iconStyle = (icon: string, value?: number) => {
+  const percentage = value ? getClipPathPercent(value) : 100;
   const clipPathValue = `inset(0 ${percentage}% 0 0)`;
 
   return {
-    backgroundImage: `url(${props.fillIcon})`,
-    clipPath: clipPathValue,
-    ...ratingStyle.value,
+    width: `${props.iconSize}px`,
+    height: `${props.iconSize}px`,
+    backgroundImage: `url(${icon})`,
+    backgroundSize: "contain",
+    backgroundRepeat: "no-repeat",
+    clipPath: value ? clipPathValue : undefined,
   };
-});
+};
+
+const isFilled = (v: number) => getClipPathPercent(v) < 100;
+
+const getClipPathPercent = (v: number) => {
+  if (v <= ratingValue.value) return 0;
+  return v - ratingValue.value === 0.5 ? 50 : 100;
+};
 
 const handleMouseMove = (e: MouseEvent) => {
   if (!rating.value) return;
@@ -92,10 +103,8 @@ const handleMouseMove = (e: MouseEvent) => {
   const x = e.clientX - rect.left;
   const width = rect.width;
 
-  let value = Math.ceil((x / width) * 10) / 2;
-  value = Math.min(Math.max(value, 0.5), RATING_COUNT);
-
-  hoveredRating.value = value;
+  const value = Math.ceil((x / width) * RATING_COUNT * 2) / 2;
+  hoveredRating.value = Math.min(Math.max(value, 0.5), RATING_COUNT);
 };
 
 const fixRating = () => {
@@ -103,11 +112,6 @@ const fixRating = () => {
 
   currentRating.value = hoveredRating.value;
   emit("update:modelValue", currentRating.value);
-
-  isSelecting.value = true;
-  setTimeout(() => {
-    isSelecting.value = false;
-  }, 200);
 };
 
 const resetRating = () => {
@@ -117,21 +121,26 @@ const resetRating = () => {
 
 <style scoped>
 .rating {
-  position: relative;
-  transition: 0.2s;
-  transform: scale(1);
+  width: fit-content;
+  display: flex;
   cursor: pointer;
 }
 
-.rating-empty,
-.rating-fill {
+.star {
+  position: relative;
+  transition: transform 0.2s ease;
+}
+
+.star:hover,
+.star.filled {
+  transform: scale(1.2);
+}
+
+.star-empty,
+.star-fill {
   position: absolute;
   top: 0;
   left: 0;
-  background-repeat: repeat-x;
-}
-
-.rating.fixed {
-  transform: scale(1.02);
+  transition: clip-path 0.2s ease;
 }
 </style>

@@ -22,8 +22,8 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import StarIcon from "../assets/icon/star-fill.svg";
-import StarEmptyIcon from "../assets/icon/star.svg";
+import StarIcon from "/icon/star-fill.svg";
+import StarEmptyIcon from "/icon/star.svg";
 
 const RATING_COUNT = 5;
 

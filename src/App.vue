@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import FaceEmptyIcon from "./assets/icon/face.svg";
-import FaceFillIcon from "./assets/icon/face-fill.svg";
+import FaceEmptyIcon from "/icon/face.svg";
+import FaceFillIcon from "/icon/face-fill.svg";
 
 import Rating from "./components/Rating.vue";
 
